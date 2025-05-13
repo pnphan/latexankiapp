@@ -1,0 +1,147 @@
+\ProvidesPackage{style}
+
+\tracinglostchars=3
+\usepackage[T3,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\DeclareTextSymbol{\textdbar}{T3}{"A1}
+\DeclareTextSymbolDefault{\textdbar}{T3}
+\newcommand\dbar{\textnormal{\textdbar}}
+% NeurIPS uses Times New Roman (or similar) font
+%\usepackage{times} % Sets the document's font to Times
+%\usepackage{lmodern}
+%\usepackage{palatino}
+% Standard packages for math
+\usepackage{amsmath}   % For advanced math features
+\usepackage{amssymb}   % For additional math symbols
+\usepackage{amsfonts}  % For math fonts
+\usepackage{bm}        % For bold math symbols
+\usepackage{mathtools} % Enhancements to amsmath
+
+
+\usepackage{anyfontsize}
+\usepackage{extsizes}
+% Additional useful packages
+\usepackage{graphicx}  % For including images
+\usepackage{hyperref}  % For hyperlinks
+\usepackage{xcolor}    % For colored text
+\usepackage{tocloft}   % For table of contents with dots
+\usepackage{listings}
+\usepackage{ marvosym }
+
+\usepackage{titlesec}
+
+% Define a custom light coffee color
+\definecolor{lightcoffee}{RGB}{245, 222, 179}
+\definecolor{grey}{RGB}{246, 246, 246}
+\definecolor{darkorange}{RGB}{139, 64, 0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+
+
+% Configure the listings environment
+\lstset{
+    backgroundcolor=\color{grey}, % Set background color
+    basicstyle=\ttfamily\small,         % Set font style and size
+    frame=single,                       % Add a frame around the code
+    rulecolor=\color{black},            % Set the frame color
+    keywordstyle=\color{blue},          % Keywords color
+    commentstyle=\color{green!50!black}, % Comments color
+    stringstyle=\color{darkorange},            % String color
+    numbers=left,                       % Line numbers on the left
+    numberstyle=\scriptsize\color{codegray},      % Style for line numbers
+    breaklines=true,                    % Automatically break long lines
+    captionpos=b                        % Caption position: b for below
+}
+
+% Page formatting
+\usepackage[a4paper, margin=1in]{geometry} % Standard page geometry
+
+% Adjust table of contents
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% Remove page numbers on the first page
+\usepackage{fancyhdr} % For custom headers and footers
+\pagestyle{fancy}
+\fancyhf{} % Clear all header and footer fields
+\renewcommand{\headrulewidth}{0pt} % Remove header rule
+\renewcommand{\footrulewidth}{0pt} % Remove footer rule
+\fancypagestyle{plain}{% Define style for the first page
+  \fancyhf{} % Clear all header and footer fields
+}
+\fancypagestyle{default}{% Define style for subsequent pages
+  \fancyhf{} % Clear all header and footer fields
+  \cfoot{\thepage} % Set page number in footer
+}
+\thispagestyle{plain} % Apply plain style to the title page
+\usepackage{tikz}
+\usepackage{svg}
+\usepackage[most]{tcolorbox}
+\usetikzlibrary{arrows.meta}
+\newtcolorbox{skillcheck}{
+  colback=lightgray!20, % Background color (light gray)
+  colframe=gray!80,     % Border color
+  arc=5mm,              % Rounded corners
+  boxrule=0.5mm,        % Border thickness
+  width=\linewidth,     % Box width
+  auto outer arc,       % Smooth corner transition
+  left=2mm, right=2mm,  % Inner padding
+  top=2mm, bottom=2mm
+}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dd}{\text{d}}
+\newcommand{\D}{\text{D}}
+\newcommand{\uu}{\text{u}}
+\newcommand{\vv}{\text{v}}
+\newcommand{\ww}{\text{w}}
+\newcommand{\velocity}{\vec{\textbf{v}}}
+\newcommand{\massflux}{\vec{\textbf{j}}}
+\newcommand{\grad}{\textbf{grad}}
+\newcommand{\divv}{\textbf{div}}
+\newcommand{\curl}{\textbf{curl}}
+\newcommand{\horvelocity}{\vec{\textbf{u}}}
+\newcommand{\vorticity}{\vec{\boldsymbol{\zeta}}}
+\newcommand{\viscosity}{\nu\nabla^2\velocity}
+\newcommand{\basis}{\vec{\textbf{e}}}
+\newcommand{\angular}
+{\vec{\boldsymbol{\Omega}}}
+\newcommand{\position}{\vec{\textbf{r}}}
+\newcommand{\force}{\vec{\textbf{F}}}
+\newcommand{\gravity}{\vec{\textbf{g}}}
+\newcommand{\centrifugal}{\angular \times (\angular \times \position)}
+\newcommand{\coriolis}{2\angular \times \velocity}
+\newcommand{\coriolisparam}{\vec{\boldsymbol{f}}}
+\newcommand{\n}{\newline\newline}
+\usepackage{framed}
+\usepackage[left]{lineno}
+\usepackage{gensymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tocloft}
+\renewcommand{\cftsecfont}{\normalfont}      % section title in ToC
+\renewcommand{\cftsecpagefont}{\normalfont}
+% \titleformat*{\section}{\normalfont}
+% \titleformat*{\subsection}{\normalfont}
+\usepackage{hyperref}
+\hypersetup{
+  hidelinks,             % removes color and borders
+  bookmarksopen=true,    % still shows bookmarks in PDF sidebar
+  pdfstartview=FitH
+}
+
+\usepackage[most]{tcolorbox}
+
+% Define a custom boxed environment
+\newtcolorbox{mybox}[1][]{%
+  colback=gray!5,    % Background color
+  colframe=black,    % Border color
+  fonttitle=\bfseries,
+  coltitle=black,
+  colbacktitle=gray!20,
+  title=#1,
+  boxrule=0.8pt,
+  arc=4pt,            % Rounded corners
+  auto outer arc,
+  left=6pt,
+  right=6pt,
+  top=6pt,
+  bottom=6pt
+}

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX Anki Card Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- CodeMirror CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <style>
+        .CodeMirror {
+            height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+        }
+        .CodeMirror-linenumber {
+            font-size: 16px;
+        }
+        .CodeMirror-hints {
+            z-index: 100;
+            font-size: 16px;
+        }
+        .preview-container {
+            min-height: 350px;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .preview-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 1rem;
+        }
+        .preview-section:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .loading {
+            display: none;
+            color: #4B5563;
+        }
+        .error-message {
+            color: #DC2626;
+            display: none;
+            margin-top: 0.5rem;
+        }
+        .success-message {
+            color: #059669;
+            display: none;
+            margin-top: 0.5rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">LaTeX Anki Card Generator</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Column: Input Boxes -->
+            <div class="space-y-8">
+                <!-- Question Input -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Question</h2>
+                    <textarea id="questionInput"></textarea>
+                    <p id="questionError" class="error-message"></p>
+                </div>
+
+                <!-- Answer Input -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Answer</h2>
+                    <textarea id="answerInput"></textarea>
+                    <p id="answerError" class="error-message"></p>
+                </div>
+            </div>
+
+            <!-- Right Column: Combined Preview -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Preview</h2>
+                <div id="previewContainer" class="preview-container">
+                    <div class="preview-section">
+                        <h3 class="text-lg font-medium mb-2">Question</h3>
+                        <div id="questionPreview" class="w-full flex items-center justify-center">
+                            <p class="text-gray-500 text-center">Question preview will appear here</p>
+                        </div>
+                    </div>
+                    <div class="preview-section">
+                        <h3 class="text-lg font-medium mb-2">Answer</h3>
+                        <div id="answerPreview" class="w-full flex items-center justify-center">
+                            <p class="text-gray-500 text-center">Answer preview will appear here</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="button-group">
+                            <button id="renderButton" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                                Render Preview
+                            </button>
+                            <button id="addCardButton" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                                Add Card
+                            </button>
+                        </div>
+                        <button id="clearCardsButton" class="w-full mt-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                            Clear All Cards
+                        </button>
+                        <p id="loadingMessage" class="loading mt-4 text-center">Rendering LaTeX...</p>
+                        <p id="successMessage" class="success-message mt-4 text-center">Card added successfully!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/stex/stex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/anyword-hint.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">
+
+    <script>
+        // LaTeX commands for autocompletion
+        const latexCommands = [
+            '\\frac', '\\sqrt', '\\sum', '\\prod', '\\int', '\\lim',
+            '\\alpha', '\\beta', '\\gamma', '\\delta', '\\epsilon',
+            '\\theta', '\\lambda', '\\mu', '\\pi', '\\sigma', '\\omega',
+            '\\infty', '\\partial', '\\nabla', '\\pm', '\\mp', '\\times',
+            '\\div', '\\cdot', '\\leq', '\\geq', '\\neq', '\\approx',
+            '\\equiv', '\\subset', '\\supset', '\\in', '\\notin',
+            '\\cup', '\\cap', '\\emptyset', '\\varnothing',
+            '\\rightarrow', '\\leftarrow', '\\leftrightarrow',
+            '\\Rightarrow', '\\Leftarrow', '\\Leftrightarrow',
+            '\\forall', '\\exists', '\\neg', '\\vee', '\\wedge',
+            '\\therefore', '\\because', '\\square', '\\blacksquare',
+            '\\triangle', '\\angle', '\\perp', '\\parallel',
+            '\\cong', '\\sim', '\\simeq', '\\asymp',
+            '\\propto', '\\varpropto', '\\models', '\\vdash',
+            '\\dashv', '\\vdash', '\\nvdash', '\\vDash',
+            '\\nvdash', '\\vDash', '\\nvDash', '\\Vdash',
+            '\\nVdash', '\\Vvdash', '\\nVvdash'
+        ];
+
+        // Initialize CodeMirror instances
+        const questionEditor = CodeMirror.fromTextArea(document.getElementById('questionInput'), {
+            mode: 'stex',
+            theme: 'monokai',
+            lineNumbers: true,
+            matchBrackets: true,
+            extraKeys: {
+                "Ctrl-Space": "autocomplete",
+                "Tab": function(cm) {
+                    if (cm.somethingSelected()) {
+                        cm.indentSelection("add");
+                    } else {
+                        cm.replaceSelection("    ", "end");
+                    }
+                }
+            },
+            hintOptions: {
+                completeSingle: false,
+                words: latexCommands
+            }
+        });
+
+        const answerEditor = CodeMirror.fromTextArea(document.getElementById('answerInput'), {
+            mode: 'stex',
+            theme: 'monokai',
+            lineNumbers: true,
+            matchBrackets: true,
+            extraKeys: {
+                "Ctrl-Space": "autocomplete",
+                "Tab": function(cm) {
+                    if (cm.somethingSelected()) {
+                        cm.indentSelection("add");
+                    } else {
+                        cm.replaceSelection("    ", "end");
+                    }
+                }
+            },
+            hintOptions: {
+                completeSingle: false,
+                words: latexCommands
+            }
+        });
+
+        const renderButton = document.getElementById('renderButton');
+        const addCardButton = document.getElementById('addCardButton');
+        const clearCardsButton = document.getElementById('clearCardsButton');
+        const questionPreview = document.getElementById('questionPreview');
+        const answerPreview = document.getElementById('answerPreview');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const successMessage = document.getElementById('successMessage');
+        const questionError = document.getElementById('questionError');
+        const answerError = document.getElementById('answerError');
+
+        let renderTimeout;
+
+        function showLoading() {
+            loadingMessage.style.display = 'block';
+            renderButton.disabled = true;
+            addCardButton.disabled = true;
+            clearCardsButton.disabled = true;
+            questionError.style.display = 'none';
+            answerError.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        function hideLoading() {
+            loadingMessage.style.display = 'none';
+            renderButton.disabled = false;
+            addCardButton.disabled = false;
+            clearCardsButton.disabled = false;
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(message, isQuestion = true) {
+            const errorElement = isQuestion ? questionError : answerError;
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        async function renderPreview() {
+            const question = questionEditor.getValue();
+            const answer = answerEditor.getValue();
+
+            if (!question && !answer) return;
+
+            showLoading();
+
+            try {
+                const response = await fetch('/render', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answer
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.question_image) {
+                        questionPreview.innerHTML = `<img src="${data.question_image}" class="max-w-full h-auto" alt="Question Preview">`;
+                    }
+                    if (data.answer_image) {
+                        answerPreview.innerHTML = `<img src="${data.answer_image}" class="max-w-full h-auto" alt="Answer Preview">`;
+                    }
+                } else {
+                    showError(data.error || 'Failed to render LaTeX', true);
+                    showError(data.error || 'Failed to render LaTeX', false);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while rendering', true);
+                showError('An error occurred while rendering', false);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function addCard() {
+            const question = questionEditor.getValue();
+            const answer = answerEditor.getValue();
+
+            if (!question || !answer) {
+                showError('Both question and answer are required', true);
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/save_card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answer
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Card added successfully!');
+                    // Clear the inputs after successful save
+                    questionEditor.setValue('');
+                    answerEditor.setValue('');
+                    questionPreview.innerHTML = '<p class="text-gray-500 text-center">Question preview will appear here</p>';
+                    answerPreview.innerHTML = '<p class="text-gray-500 text-center">Answer preview will appear here</p>';
+                } else {
+                    showError(data.error || 'Failed to save card', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while saving the card', true);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function clearCards() {
+            if (!confirm('Are you sure you want to clear all cards? This cannot be undone.')) {
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/clear_cards', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('All cards cleared successfully!');
+                } else {
+                    showError(data.error || 'Failed to clear cards', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while clearing cards', true);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Add event listeners
+        renderButton.addEventListener('click', renderPreview);
+        addCardButton.addEventListener('click', addCard);
+        clearCardsButton.addEventListener('click', clearCards);
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                renderPreview();
+            }
+        });
+    </script>
+</body>
+</html> 
