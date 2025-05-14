@@ -7,8 +7,15 @@ import io
 import time
 from datetime import datetime
 import pandas as pd
+import csv
 
 app = Flask(__name__)
+
+CSV_FILE = 'entries.csv'
+# Create CSV file if it doesn't exist
+if not os.path.exists(CSV_FILE):
+    df = pd.DataFrame(columns=['Question', 'Answer'])
+    df.to_csv(CSV_FILE, index=False)
 
 @app.route('/')
 def index():
@@ -70,6 +77,33 @@ def render_latex():
             'success': False,
             'error': str(e)
         })
+    
+@app.route('/save_entry', methods=['POST'])
+def save_entry():
+    data = request.json
+    question = data.get('question', '')
+    answer = data.get('answer', '')
+    
+    if question and answer:
+        # Read existing CSV
+        df = pd.read_csv(CSV_FILE)
+        
+        # Add new row
+        new_row = pd.DataFrame({
+            'Question': [question],
+            'Answer': [answer]
+        })
+        df = pd.concat([df, new_row], ignore_index=True)
+        
+        # Save back to CSV
+        df.to_csv(CSV_FILE, index=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Entry saved successfully'
+        })
+    
+    return jsonify({'status': 'error', 'message': 'Both fields are required'})
 
 @app.route('/save_card', methods=['POST'])
 def save_card():
@@ -99,6 +133,23 @@ def save_card():
             'success': False,
             'error': str(e)
         })
+    
+@app.route('/clear_entries', methods=['POST'])
+def clear_entries():
+    try:
+        # Create empty DataFrame with headers
+        df = pd.DataFrame(columns=['Question', 'Answer'])
+        df.to_csv(CSV_FILE, index=False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'All entries cleared successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 @app.route('/clear_cards', methods=['POST'])
 def clear_cards():
@@ -110,6 +161,42 @@ def clear_cards():
         return jsonify({
             'success': True,
             'message': 'All cards cleared successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+    
+@app.route('/convert_entries', methods=['POST'])
+def convert_entries():
+    try:
+        question_entries = []
+        answer_entries = []
+
+        with open(CSV_FILE, 'r') as file:
+            reader = csv.reader(file)
+            next(reader)  # Skip the header row
+            for row in reader:
+                if row and len(row) > 0:
+                    question_entries.append(row[0])
+                    answer_entries.append(row[1])
+
+        for question, answer in zip(question_entries, answer_entries):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            question_filename = f"card_question_{timestamp}"
+            answer_filename = f"card_answer_{timestamp}"
+            
+            # Create the cards
+            question_path = create_card("Question", question, question_filename)
+            answer_path = create_card("Answer", answer, answer_filename)
+            
+            # Save to CSV
+            save_to_csv(question_path, answer_path)
+        
+        return jsonify({
+            'success': True,
+            'message': 'All entries converted successfully'
         })
     except Exception as e:
         return jsonify({

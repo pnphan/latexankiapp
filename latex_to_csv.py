@@ -70,39 +70,7 @@ def save_to_csv(question_path, answer_path, csv_path="anki_cards.csv"):
         writer.writerow([f'<img src="{os.path.basename(question_path)}">', f'<img src="{os.path.basename(answer_path)}">'])
 
 
-# === Example usage ===
-if __name__ == "__main__":
-    entries_location = "data/entries.csv"
-    csv_path = f"data/anki_cards_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    # Read entries from CSV file
-    question_entries = []
-    answer_entries = []
-    try:
-        with open(entries_location, mode="r", newline="") as csvfile:
-            reader = csv.reader(csvfile)
-            # Skip header row if it exists
-            next(reader, None)
-            for row in reader:
-                if row and len(row) > 0:  # Ensure row is not empty
-                    question_entries.append(row[0])
-                    answer_entries.append(row[1])
-    except FileNotFoundError:
-        print(f"Error: File {entries_location} not found.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error reading CSV file: {e}")
-        sys.exit(1)
-    
-    if not question_entries or not answer_entries:
-        print("No entries found in the CSV file.")
-        sys.exit(0)
-        
-    for question_entry, answer_entry in zip(question_entries, answer_entries):
-        now = datetime.now().strftime("%Y%m%d_%H%M%S")
-        question_filename = f"{now}_question"
-        answer_filename = f"{now}_answer"
-        
-        question_path = create_card("Question", question_entry, question_filename)
-        answer_path = create_card("Answer", answer_entry, answer_filename)
-        save_to_csv(question_path, answer_path, csv_path)
+# # === Example usage ===
+# if __name__ == "__main__":
+
 

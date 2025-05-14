@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LaTeX Anki Card Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="/static/css/tailwind.min.css" rel="stylesheet">
     <!-- CodeMirror CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css" rel="stylesheet">
+    <link href="/static/css/codemirror.min.css" rel="stylesheet">
+    <link href="/static/css/monokai.min.css" rel="stylesheet">
+    <link href="/static/css/show-hint.min.css" rel="stylesheet">
     <style>
         .CodeMirror {
             height: 200px;
@@ -90,35 +91,45 @@
             </div>
 
             <!-- Right Column: Combined Preview -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="bg-white rounded-lg shadow-lg p-6 h-full flex flex-col">
                 <h2 class="text-xl font-semibold mb-4">Preview</h2>
-                <div id="previewContainer" class="preview-container">
-                    <div class="preview-section">
+                <div id="previewContainer" class="preview-container flex-grow flex flex-col">
+                    <div class="preview-section flex-grow">
                         <h3 class="text-lg font-medium mb-2">Question</h3>
-                        <div id="questionPreview" class="w-full flex items-center justify-center">
+                        <div id="questionPreview" class="w-full flex items-center justify-center min-h-[150px]">
                             <p class="text-gray-500 text-center">Question preview will appear here</p>
                         </div>
                     </div>
-                    <div class="preview-section">
+                    <div class="preview-section flex-grow">
                         <h3 class="text-lg font-medium mb-2">Answer</h3>
-                        <div id="answerPreview" class="w-full flex items-center justify-center">
+                        <div id="answerPreview" class="w-full flex items-center justify-center min-h-[150px]">
                             <p class="text-gray-500 text-center">Answer preview will appear here</p>
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="mt-auto">  
+                        <!-- class="mt-4 pt-4 border-t border-gray-200" -->
                         <div class="button-group">
                             <button id="renderButton" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
                                 Render Preview
+                            </button>
+                            <button id="addEntryButton" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                                Add Entry
                             </button>
                             <button id="addCardButton" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
                                 Add Card
                             </button>
                         </div>
-                        <button id="clearCardsButton" class="w-full mt-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                        <button id="convertEntriesButton" class="w-full mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                            Convert All Entries
+                        </button>
+                        <button id="clearEntriesButton" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                            Clear All Entries
+                        </button>
+                        <button id="clearCardsButton" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
                             Clear All Cards
                         </button>
-                        <p id="loadingMessage" class="loading mt-4 text-center">Rendering LaTeX...</p>
-                        <p id="successMessage" class="success-message mt-4 text-center">Card added successfully!</p>
+                        <p id="loadingMessage" class="loading mt-4 text-center">Loading...</p>
+                        <p id="successMessage" class="success-message mt-4 text-center">Success!</p>
                     </div>
                 </div>
             </div>
@@ -126,12 +137,11 @@
     </div>
 
     <!-- CodeMirror JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/stex/stex.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/anyword-hint.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">
+    <script src="/static/js/codemirror.min.js"></script>
+    <script src="/static/js/stex.min.js"></script>
+    <script src="/static/js/matchbrackets.min.js"></script>
+    <script src="/static/js/show-hint.min.js"></script>
+    <script src="/static/js/anyword-hint.min.js"></script>
 
     <script>
         // LaTeX commands for autocompletion
@@ -200,7 +210,10 @@
 
         const renderButton = document.getElementById('renderButton');
         const addCardButton = document.getElementById('addCardButton');
+        const addEntryButton = document.getElementById('addEntryButton');
         const clearCardsButton = document.getElementById('clearCardsButton');
+        const clearEntriesButton = document.getElementById('clearEntriesButton');
+        const convertEntriesButton = document.getElementById('convertEntriesButton');
         const questionPreview = document.getElementById('questionPreview');
         const answerPreview = document.getElementById('answerPreview');
         const loadingMessage = document.getElementById('loadingMessage');
@@ -214,7 +227,10 @@
             loadingMessage.style.display = 'block';
             renderButton.disabled = true;
             addCardButton.disabled = true;
+            addEntryButton.disabled = true;
             clearCardsButton.disabled = true;
+            clearEntriesButton.disabled = true;
+            convertEntriesButton.disabled = true;
             questionError.style.display = 'none';
             answerError.style.display = 'none';
             successMessage.style.display = 'none';
@@ -224,7 +240,10 @@
             loadingMessage.style.display = 'none';
             renderButton.disabled = false;
             addCardButton.disabled = false;
+            addEntryButton.disabled = false;
             clearCardsButton.disabled = false;
+            clearEntriesButton.disabled = false;
+            convertEntriesButton.disabled = false;
         }
 
         function showSuccess(message) {
@@ -283,6 +302,49 @@
             }
         }
 
+        async function addEntry() {
+            const question = questionEditor.getValue();
+            const answer = answerEditor.getValue();
+
+            if (!question || !answer) {
+                showError('Both question and answer are required', true);
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/save_entry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answer
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Entry added successfully!');
+                    // Clear the inputs after successful save
+                    questionEditor.setValue('');
+                    answerEditor.setValue('');
+                    questionPreview.innerHTML = '<p class="text-gray-500 text-center">Question preview will appear here</p>';
+                    answerPreview.innerHTML = '<p class="text-gray-500 text-center">Answer preview will appear here</p>';
+                } else {
+                    showError(data.error || 'Failed to save entry', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while saving the card', true);
+            } finally {
+                hideLoading();
+            }
+        }
+
         async function addCard() {
             const question = questionEditor.getValue();
             const answer = answerEditor.getValue();
@@ -326,6 +388,70 @@
             }
         }
 
+        async function clearEntries() {
+            if (!confirm('Are you sure you want to clear all entries? This cannot be undone.')) {
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/clear_entries', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('All entries cleared successfully!');
+                    // Clear the inputs after successful save
+                    questionEditor.setValue('');
+                    answerEditor.setValue('');
+                    questionPreview.innerHTML = '<p class="text-gray-500 text-center">Question preview will appear here</p>';
+                    answerPreview.innerHTML = '<p class="text-gray-500 text-center">Answer preview will appear here</p>';
+                } else {
+                    showError(data.error || 'Failed to clear entries', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while clearing entries', true);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function convertEntries() {
+            if (!confirm('Are you sure you want to convert all entries?')) {
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/convert_entries', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('All entries converted successfully!');
+                    // Clear the inputs after successful save
+                    questionEditor.setValue('');
+                    answerEditor.setValue('');
+                    questionPreview.innerHTML = '<p class="text-gray-500 text-center">Question preview will appear here</p>';
+                    answerPreview.innerHTML = '<p class="text-gray-500 text-center">Answer preview will appear here</p>';
+                } else {
+                    showError(data.error || 'Failed to convert entries', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while converting entries', true);
+            } finally {
+                hideLoading();
+            }
+        }
+
         async function clearCards() {
             if (!confirm('Are you sure you want to clear all cards? This cannot be undone.')) {
                 return;
@@ -342,6 +468,11 @@
 
                 if (data.success) {
                     showSuccess('All cards cleared successfully!');
+                    // Clear the inputs after successful save
+                    questionEditor.setValue('');
+                    answerEditor.setValue('');
+                    questionPreview.innerHTML = '<p class="text-gray-500 text-center">Question preview will appear here</p>';
+                    answerPreview.innerHTML = '<p class="text-gray-500 text-center">Answer preview will appear here</p>';
                 } else {
                     showError(data.error || 'Failed to clear cards', true);
                 }
@@ -355,9 +486,11 @@
 
         // Add event listeners
         renderButton.addEventListener('click', renderPreview);
+        addEntryButton.addEventListener('click', addEntry);
         addCardButton.addEventListener('click', addCard);
         clearCardsButton.addEventListener('click', clearCards);
-
+        clearEntriesButton.addEventListener('click', clearEntries);
+        convertEntriesButton.addEventListener('click', convertEntries);
         // Add keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
