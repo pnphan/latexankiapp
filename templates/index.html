@@ -77,14 +77,14 @@
             <div class="space-y-8">
                 <!-- Question Input -->
                 <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-semibold mb-4">Question</h2>
+                    <h2 class="text-xl font-semibold mb-4">Front</h2>
                     <textarea id="questionInput"></textarea>
                     <p id="questionError" class="error-message"></p>
                 </div>
 
                 <!-- Answer Input -->
                 <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-semibold mb-4">Answer</h2>
+                    <h2 class="text-xl font-semibold mb-4">Back</h2>
                     <textarea id="answerInput"></textarea>
                     <p id="answerError" class="error-message"></p>
                 </div>
@@ -95,15 +95,15 @@
                 <h2 class="text-xl font-semibold mb-4">Preview</h2>
                 <div id="previewContainer" class="preview-container flex-grow flex flex-col">
                     <div class="preview-section flex-grow">
-                        <h3 class="text-lg font-medium mb-2">Question</h3>
+                        <h3 class="text-lg font-medium mb-2">Front</h3>
                         <div id="questionPreview" class="w-full flex items-center justify-center min-h-[150px]">
-                            <p class="text-gray-500 text-center">Question preview will appear here</p>
+                            <p class="text-gray-500 text-center">Front preview will appear here</p>
                         </div>
                     </div>
                     <div class="preview-section flex-grow">
-                        <h3 class="text-lg font-medium mb-2">Answer</h3>
+                        <h3 class="text-lg font-medium mb-2">Back</h3>
                         <div id="answerPreview" class="w-full flex items-center justify-center min-h-[150px]">
-                            <p class="text-gray-500 text-center">Answer preview will appear here</p>
+                            <p class="text-gray-500 text-center">Back preview will appear here</p>
                         </div>
                     </div>
                     <div class="mt-auto">  
@@ -307,7 +307,7 @@
             const answer = answerEditor.getValue();
 
             if (!question || !answer) {
-                showError('Both question and answer are required', true);
+                showError('Both front and back are required', true);
                 return;
             }
 
@@ -350,7 +350,7 @@
             const answer = answerEditor.getValue();
 
             if (!question || !answer) {
-                showError('Both question and answer are required', true);
+                showError('Both front and back are required', true);
                 return;
             }
 
