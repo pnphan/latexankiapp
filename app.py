@@ -51,6 +51,9 @@ def select_deck():
     global CSV_FILE
     CSV_FILE = f'entries/{selected_deck.lower().replace(" ", "_")}_entries.csv'
 
+    global SELECTED_DECK
+    SELECTED_DECK = selected_deck
+
     global DECK_PATH
     DECK_PATH = f'converted_decks/{selected_deck.lower().replace(" ", "_")}_converted.csv'
     
@@ -194,8 +197,8 @@ def save_card():
     try:
         # Create unique filenames for permanent storage
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        question_filename = f"card_question_{timestamp}"
-        answer_filename = f"card_answer_{timestamp}"
+        question_filename = f"{SELECTED_DECK}_question_{timestamp}"
+        answer_filename = f"{SELECTED_DECK}_answer_{timestamp}"
         
         # Create the cards
         question_path = create_card("Question", question, question_filename)
@@ -236,7 +239,7 @@ def clear_cards():
     try:
         # Create empty DataFrame with headers
         df = pd.DataFrame(columns=['Question', 'Answer'])
-        df.to_csv('anki_cards.csv', index=False)
+        df.to_csv(DECK_PATH, index=False)
         
         return jsonify({
             'success': True,
@@ -264,8 +267,8 @@ def convert_entries():
 
         for question, answer in zip(question_entries, answer_entries):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            question_filename = f"card_question_{timestamp}"
-            answer_filename = f"card_answer_{timestamp}"
+            question_filename = f"{SELECTED_DECK}_question_{timestamp}"
+            answer_filename = f"{SELECTED_DECK}_answer_{timestamp}"
             
             # Create the cards
             question_path = create_card("Question", question, question_filename)
