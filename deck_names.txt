@@ -1,0 +1,19 @@
+Misc
+Algorithms
+C++
+Coding Interview
+Distributed Systems
+Fluid Mechanics
+GPU Programming
+JAX
+Machine Learning
+Magnetohydrodynamics
+Mandarin
+Math Methods
+Optimization
+Python
+PyTorch
+Radiative Transfer
+Research Papers
+Rust
+Scientific Computing

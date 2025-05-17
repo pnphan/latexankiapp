@@ -93,6 +93,37 @@
             <!-- Right Column: Combined Preview -->
             <div class="bg-white rounded-lg shadow-lg p-6 h-full flex flex-col">
                 <h2 class="text-xl font-semibold mb-4">Preview</h2>
+                <div class="mb-4">
+                    <label for="deckSelect" class="block text-sm font-medium text-gray-700 mb-2">Select Deck</label>
+                    <div class="flex gap-2">
+                        <select id="deckSelect" class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Misc" selected>Misc</option>
+                        </select>
+                        <button id="newDeckButton" class="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            New
+                        </button>
+                    </div>
+                </div>
+                <!-- New Deck Modal -->
+                <div id="newDeckModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Create New Deck</h3>
+                            <div class="mt-2 px-7 py-3">
+                                <input type="text" id="newDeckName" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter deck name">
+                                <p id="newDeckError" class="error-message mt-2"></p>
+                            </div>
+                            <div class="flex justify-end gap-2 mt-4">
+                                <button id="cancelNewDeck" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                    Cancel
+                                </button>
+                                <button id="createNewDeck" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                    Create
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="previewContainer" class="preview-container flex-grow flex flex-col">
                     <div class="preview-section flex-grow">
                         <h3 class="text-lg font-medium mb-2">Front</h3>
@@ -495,6 +526,149 @@
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
                 renderPreview();
+            }
+        });
+
+        // Deck selection handling
+        const deckSelect = document.getElementById('deckSelect');
+        const newDeckButton = document.getElementById('newDeckButton');
+        const newDeckModal = document.getElementById('newDeckModal');
+        const newDeckName = document.getElementById('newDeckName');
+        const newDeckError = document.getElementById('newDeckError');
+        const cancelNewDeck = document.getElementById('cancelNewDeck');
+        const createNewDeck = document.getElementById('createNewDeck');
+        
+        // Function to update deck options
+        async function updateDeckOptions() {
+            try {
+                const response = await fetch('/select_deck', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        deck: deckSelect.value
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear existing options except the first one
+                    while (deckSelect.options.length > 1) {
+                        deckSelect.remove(1);
+                    }
+                    
+                    // Add new options
+                    data.deck_names.forEach(deck => {
+                        if (deck !== 'Misc') {  // Skip Misc as it's already the default
+                            const option = document.createElement('option');
+                            option.value = deck;
+                            option.textContent = deck;
+                            deckSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    showError(data.error || 'Failed to update deck options', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while updating deck options', true);
+            }
+        }
+
+        // Initialize deck options on page load
+        updateDeckOptions();
+
+        // Handle deck selection change
+        deckSelect.addEventListener('change', async function() {
+            try {
+                const response = await fetch('/select_deck', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        deck: this.value
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(`Switched to ${this.value} deck`);
+                } else {
+                    showError(data.error || 'Failed to switch deck', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred while switching deck', true);
+            }
+        });
+
+        // New deck modal handling
+        newDeckButton.addEventListener('click', () => {
+            newDeckModal.classList.remove('hidden');
+            newDeckName.value = '';
+            newDeckError.style.display = 'none';
+        });
+
+        cancelNewDeck.addEventListener('click', () => {
+            newDeckModal.classList.add('hidden');
+        });
+
+        createNewDeck.addEventListener('click', async () => {
+            const deckName = newDeckName.value.trim();
+            
+            if (!deckName) {
+                newDeckError.textContent = 'Deck name cannot be empty';
+                newDeckError.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/create_deck', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        deck: deckName
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(`Created new deck: ${deckName}`);
+                    newDeckModal.classList.add('hidden');
+                    // Update deck options and select the new deck
+                    await updateDeckOptions();
+                    deckSelect.value = deckName;
+                    // Trigger the change event to switch to the new deck
+                    deckSelect.dispatchEvent(new Event('change'));
+                } else {
+                    newDeckError.textContent = data.error || 'Failed to create deck';
+                    newDeckError.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                newDeckError.textContent = 'An error occurred while creating the deck';
+                newDeckError.style.display = 'block';
+            }
+        });
+
+        // Close modal when clicking outside
+        newDeckModal.addEventListener('click', (e) => {
+            if (e.target === newDeckModal) {
+                newDeckModal.classList.add('hidden');
+            }
+        });
+
+        // Handle Enter key in new deck input
+        newDeckName.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                createNewDeck.click();
             }
         });
     </script>

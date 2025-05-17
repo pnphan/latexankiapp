@@ -11,15 +11,95 @@ import csv
 
 app = Flask(__name__)
 
-CSV_FILE = 'entries.csv'
-# Create CSV file if it doesn't exist
-if not os.path.exists(CSV_FILE):
-    df = pd.DataFrame(columns=['Question', 'Answer'])
-    df.to_csv(CSV_FILE, index=False)
+DECK_NAMES_FILE = 'deck_names.txt'
+
+def get_deck_names():
+    if not os.path.exists(DECK_NAMES_FILE):
+        # Create file with default deck if it doesn't exist
+        with open(DECK_NAMES_FILE, 'w') as f:
+            f.write('Misc\n')
+        return ['Misc']
+    
+    with open(DECK_NAMES_FILE, 'r') as f:
+        return [line.strip() for line in f.readlines() if line.strip()]
+
+def add_deck_name(deck_name):
+    deck_names = get_deck_names()
+    if deck_name not in deck_names:
+        with open(DECK_NAMES_FILE, 'a') as f:
+            f.write(f'{deck_name}\n')
+        return True
+    return False
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/select_deck', methods=['POST'])
+def select_deck():
+    data = request.json
+    selected_deck = data.get('deck', 'Misc')
+    deck_names = get_deck_names()
+    
+    if selected_deck not in deck_names:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid deck name'
+        })
+    
+    global CSV_FILE
+    CSV_FILE = f'entries/{selected_deck.lower().replace(" ", "_")}_entries.csv'
+
+    global DECK_PATH
+    DECK_PATH = f'converted_decks/{selected_deck.lower().replace(" ", "_")}_converted.csv'
+    
+    # Create the CSV file if it doesn't exist
+    if not os.path.exists(CSV_FILE):
+        df = pd.DataFrame(columns=['Question', 'Answer'])
+        df.to_csv(CSV_FILE, index=False)
+
+    # Create the converted CSV file if it doesn't exist
+    if not os.path.exists(DECK_PATH):
+        df = pd.DataFrame(columns=['Question', 'Answer'])
+        df.to_csv(DECK_PATH, index=False)
+    
+    return jsonify({
+        'success': True,
+        'message': f'Selected deck: {selected_deck}',
+        'deck_names': deck_names
+    })
+
+
+@app.route('/create_deck', methods=['POST'])
+def create_deck():
+    data = request.json
+    new_deck = data.get('deck', '').strip()
+    
+    if not new_deck:
+        return jsonify({
+            'success': False,
+            'error': 'Deck name cannot be empty'
+        })
+    
+    if add_deck_name(new_deck):
+        # Create the CSV file for the new deck
+        csv_file = f'entries/{new_deck.lower().replace(" ", "_")}_entries.csv'
+        if not os.path.exists(csv_file):
+            df = pd.DataFrame(columns=['Question', 'Answer'])
+            df.to_csv(csv_file, index=False)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Created new deck: {new_deck}',
+            'deck_names': get_deck_names()
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': 'Deck already exists'
+        })
+
 
 @app.route('/render', methods=['POST'])
 def render_latex():
@@ -122,7 +202,7 @@ def save_card():
         answer_path = create_card("Answer", answer, answer_filename)
         
         # Save to CSV
-        save_to_csv(question_path, answer_path)
+        save_to_csv(question_path, answer_path, DECK_PATH)
         
         return jsonify({
             'success': True,
@@ -192,7 +272,7 @@ def convert_entries():
             answer_path = create_card("Answer", answer, answer_filename)
             
             # Save to CSV
-            save_to_csv(question_path, answer_path)
+            save_to_csv(question_path, answer_path, DECK_PATH)
         
         return jsonify({
             'success': True,
