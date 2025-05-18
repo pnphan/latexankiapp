@@ -258,8 +258,7 @@ def convert_entries():
         answer_entries = []
 
         with open(CSV_FILE, 'r') as file:
-            reader = csv.reader(file)
-            next(reader)  # Skip the header row
+            reader = list(csv.reader(file))[1:]
             for row in reader:
                 if row and len(row) > 0:
                     question_entries.append(row[0])
